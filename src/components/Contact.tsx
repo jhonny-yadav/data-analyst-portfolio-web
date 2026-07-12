@@ -9,6 +9,7 @@ export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [sentViaMailto, setSentViaMailto] = useState(false);
 
   const validateEmail = (emailStr: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
@@ -17,6 +18,7 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
+    setSentViaMailto(false);
 
     // Client-side validations
     if (!formData.name.trim()) {
@@ -42,9 +44,36 @@ export default function Contact() {
     const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
     const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
+    // Graceful fallback to client-side mailto link if EmailJS credentials are not present
     if (!serviceId || !templateId || !publicKey) {
-      setSubmitError("EmailJS credentials are not configured in settings.");
-      setIsSubmitting(false);
+      try {
+        const subject = encodeURIComponent(`Data Inquiry from ${formData.name}`);
+        const body = encodeURIComponent(
+          `Hi Aryan,\n\n` +
+          `My name is ${formData.name}${formData.company ? ` from ${formData.company}` : ""}.\n\n` +
+          `Here is my inquiry:\n` +
+          `----------------------------------------\n` +
+          `${formData.message}\n` +
+          `----------------------------------------\n\n` +
+          `You can reply to me directly at: ${formData.email}\n\n` +
+          `Best regards,\n` +
+          `${formData.name}`
+        );
+
+        const mailtoUrl = `mailto:aryan.yadav.working2007@gmail.com?subject=${subject}&body=${body}`;
+        
+        // Open the native mail client
+        window.location.href = mailtoUrl;
+
+        setSentViaMailto(true);
+        setIsSubmitting(false);
+        setIsSubmitted(true);
+        setFormData({ name: "", email: "", company: "", message: "" });
+      } catch (err: any) {
+        console.error("Mailto fallback error:", err);
+        setSubmitError("Failed to launch your email client automatically. Please email aryan.yadav.working2007@gmail.com directly.");
+        setIsSubmitting(false);
+      }
       return;
     }
 
@@ -63,7 +92,23 @@ export default function Contact() {
       setFormData({ name: "", email: "", company: "", message: "" });
     } catch (err: any) {
       console.error("EmailJS Error:", err);
-      setSubmitError(err?.text || err?.message || "Failed to send message. Please try again later.");
+      // Fallback if EmailJS fails at runtime
+      try {
+        const subject = encodeURIComponent(`Data Inquiry from ${formData.name} (API Fallback)`);
+        const body = encodeURIComponent(
+          `Hi Aryan,\n\n` +
+          `My name is ${formData.name}${formData.company ? ` from ${formData.company}` : ""}.\n\n` +
+          `Message:\n${formData.message}\n\n` +
+          `Reply to: ${formData.email}`
+        );
+        const mailtoUrl = `mailto:aryan.yadav.working2007@gmail.com?subject=${subject}&body=${body}`;
+        window.location.href = mailtoUrl;
+        setSentViaMailto(true);
+        setIsSubmitted(true);
+        setFormData({ name: "", email: "", company: "", message: "" });
+      } catch (fallbackErr) {
+        setSubmitError("API dispatch failed. Please contact aryan.yadav.working2007@gmail.com directly.");
+      }
       setIsSubmitting(false);
     }
   };
@@ -274,9 +319,14 @@ export default function Contact() {
                     <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500 rounded-full flex items-center justify-center mx-auto text-emerald-500 mb-2">
                       ✓
                     </div>
-                    <h4 className="text-xl font-bold text-white">Transmission Succeeded</h4>
+                    <h4 className="text-xl font-bold text-white">
+                      {sentViaMailto ? "Email Client Opened" : "Transmission Succeeded"}
+                    </h4>
                     <p className="text-sm text-gray-400 font-sans max-w-sm mx-auto">
-                      Your operational inquiry has been successfully dispatched. Aryan will review your request and get back to you within 24 operational hours.
+                      {sentViaMailto 
+                        ? "Your email application has been launched with a pre-filled message. Please hit 'Send' in your mail app to deliver your inquiry directly to Aryan!"
+                        : "Your operational inquiry has been successfully dispatched. Aryan will review your request and get back to you within 24 operational hours."
+                      }
                     </p>
                     <button
                       onClick={() => {
