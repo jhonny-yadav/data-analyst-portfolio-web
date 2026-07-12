@@ -1,118 +1,8 @@
-import React, { useState } from "react";
-import { Mail, LinkIcon, Code, Close, ArrowRight, Phone } from "./Icons";
-import { motion, AnimatePresence } from "motion/react";
-import emailjs from "@emailjs/browser";
+import React from "react";
+import { Mail, LinkIcon, Code, Phone } from "./Icons";
+import { motion } from "motion/react";
 
 export default function Contact() {
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: "", email: "", company: "", message: "" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [sentViaMailto, setSentViaMailto] = useState(false);
-
-  const validateEmail = (emailStr: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitError(null);
-    setSentViaMailto(false);
-
-    // Client-side validations
-    if (!formData.name.trim()) {
-      setSubmitError("Please enter your name.");
-      return;
-    }
-    if (!formData.email.trim()) {
-      setSubmitError("Please enter your email address.");
-      return;
-    }
-    if (!validateEmail(formData.email)) {
-      setSubmitError("Please enter a valid email address.");
-      return;
-    }
-    if (!formData.message.trim()) {
-      setSubmitError("Please enter your message.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-    const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-    const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-
-    // Graceful fallback to client-side mailto link if EmailJS credentials are not present
-    if (!serviceId || !templateId || !publicKey) {
-      try {
-        const subject = encodeURIComponent(`Data Inquiry from ${formData.name}`);
-        const body = encodeURIComponent(
-          `Hi Aryan,\n\n` +
-          `My name is ${formData.name}${formData.company ? ` from ${formData.company}` : ""}.\n\n` +
-          `Here is my inquiry:\n` +
-          `----------------------------------------\n` +
-          `${formData.message}\n` +
-          `----------------------------------------\n\n` +
-          `You can reply to me directly at: ${formData.email}\n\n` +
-          `Best regards,\n` +
-          `${formData.name}`
-        );
-
-        const mailtoUrl = `mailto:aryan.yadav.working2007@gmail.com?subject=${subject}&body=${body}`;
-        
-        // Open the native mail client
-        window.location.href = mailtoUrl;
-
-        setSentViaMailto(true);
-        setIsSubmitting(false);
-        setIsSubmitted(true);
-        setFormData({ name: "", email: "", company: "", message: "" });
-      } catch (err: any) {
-        console.error("Mailto fallback error:", err);
-        setSubmitError("Failed to launch your email client automatically. Please email aryan.yadav.working2007@gmail.com directly.");
-        setIsSubmitting(false);
-      }
-      return;
-    }
-
-    try {
-      const templateParams = {
-        from_name: formData.name,
-        from_email: formData.email,
-        organization: formData.company,
-        message: formData.message,
-      };
-
-      await emailjs.send(serviceId, templateId, templateParams, publicKey);
-
-      setIsSubmitting(false);
-      setIsSubmitted(true);
-      setFormData({ name: "", email: "", company: "", message: "" });
-    } catch (err: any) {
-      console.error("EmailJS Error:", err);
-      // Fallback if EmailJS fails at runtime
-      try {
-        const subject = encodeURIComponent(`Data Inquiry from ${formData.name} (API Fallback)`);
-        const body = encodeURIComponent(
-          `Hi Aryan,\n\n` +
-          `My name is ${formData.name}${formData.company ? ` from ${formData.company}` : ""}.\n\n` +
-          `Message:\n${formData.message}\n\n` +
-          `Reply to: ${formData.email}`
-        );
-        const mailtoUrl = `mailto:aryan.yadav.working2007@gmail.com?subject=${subject}&body=${body}`;
-        window.location.href = mailtoUrl;
-        setSentViaMailto(true);
-        setIsSubmitted(true);
-        setFormData({ name: "", email: "", company: "", message: "" });
-      } catch (fallbackErr) {
-        setSubmitError("API dispatch failed. Please contact aryan.yadav.working2007@gmail.com directly.");
-      }
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <section className="py-section-gap bg-transparent transition-colors duration-300 relative" id="contact">
       <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop text-center relative z-10">
@@ -136,19 +26,17 @@ export default function Contact() {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0 border border-white/5 rounded-[2.5rem] bg-[#141417]/60 backdrop-blur-sm overflow-hidden transition-colors duration-300 select-none shadow-2xl"
         >
           
-          {/* Email Card (triggers custom popup modal) */}
-          <button 
-            onClick={() => {
-              setIsFormOpen(true);
-            }}
-            className="p-12 border-b lg:border-b-0 sm:border-r border-white/5 hover:bg-white/5 transition-all flex flex-col items-center justify-center cursor-pointer group text-center focus:outline-none w-full"
+          {/* Email Card (direct mailto link) */}
+          <a 
+            href="mailto:aryan.yadav.working2007@gmail.com"
+            className="p-12 border-b lg:border-b-0 sm:border-r border-white/5 hover:bg-white/5 transition-all flex flex-col items-center justify-center group text-center"
           >
             <Mail className="text-3xl mb-4 text-indigo-400 group-hover:scale-110 transition-transform duration-300" size={32} />
             <p className="font-mono text-label-caps uppercase text-gray-300 font-bold group-hover:text-indigo-400 transition-colors">
-              Email Me
+              Email
             </p>
             <p className="text-xs text-gray-400 mt-2 lowercase font-mono">aryan.yadav.working2007@gmail.com</p>
-          </button>
+          </a>
 
           {/* Call Card */}
           <a 
@@ -193,159 +81,6 @@ export default function Contact() {
         </motion.div>
 
       </div>
-
-      {/* Interactive Contact Form Modal */}
-      <AnimatePresence>
-        {isFormOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-[#0A0A0B]/85 backdrop-blur-md z-50 flex items-center justify-center p-4"
-          >
-            <motion.div 
-              initial={{ scale: 0.95, y: 15 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 15 }}
-              className="bg-[#141417] text-white w-full max-w-md border border-white/10 p-6 md:p-8 relative rounded-[2.5rem] shadow-2xl"
-            >
-              <button 
-                onClick={() => {
-                  setIsFormOpen(false);
-                  setSubmitError(null);
-                }}
-                className="absolute top-6 right-6 p-1.5 text-gray-400 hover:text-white transition-colors focus:outline-none bg-white/5 rounded-lg border border-white/5 cursor-pointer"
-              >
-                <Close size={18} />
-              </button>
-
-              <div className="mb-6">
-                <span className="font-mono text-[10px] uppercase tracking-widest text-indigo-400 font-bold select-none">
-                  Transmission Secure
-                </span>
-                <h3 className="text-2xl font-bold text-white mt-1 pr-6 leading-tight">
-                  Send Data Inquiry
-                </h3>
-              </div>
-
-              <AnimatePresence mode="wait">
-                {!isSubmitted ? (
-                  <motion.form 
-                    key="contact-form"
-                    onSubmit={handleSubmit} 
-                    className="space-y-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <div>
-                      <label className="block font-mono text-[10px] uppercase text-gray-400 mb-1.5 font-bold select-none">
-                        Name *
-                      </label>
-                      <input 
-                        type="text" 
-                        required
-                        value={formData.name}
-                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="E.g., Jane Doe"
-                        className="w-full bg-[#1c1c22] text-white border border-white/10 px-4 py-3 rounded-xl font-sans text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-mono text-[10px] uppercase text-gray-400 mb-1.5 font-bold select-none">
-                        Email Address *
-                      </label>
-                      <input 
-                        type="email" 
-                        required
-                        value={formData.email}
-                        onChange={e => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="E.g., jane@company.com"
-                        className="w-full bg-[#1c1c22] text-white border border-white/10 px-4 py-3 rounded-xl font-sans text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-mono text-[10px] uppercase text-gray-400 mb-1.5 font-bold select-none">
-                        Organization
-                      </label>
-                      <input 
-                        type="text" 
-                        value={formData.company}
-                        onChange={e => setFormData({ ...formData, company: e.target.value })}
-                        placeholder="E.g., McKinsey &amp; Co"
-                        className="w-full bg-[#1c1c22] text-white border border-white/10 px-4 py-3 rounded-xl font-sans text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-mono text-[10px] uppercase text-gray-400 mb-1.5 font-bold select-none">
-                        Message *
-                      </label>
-                      <textarea 
-                        required
-                        rows={4}
-                        value={formData.message}
-                        onChange={e => setFormData({ ...formData, message: e.target.value })}
-                        placeholder="Detail your operational or data pipeline requirements..."
-                        className="w-full bg-[#1c1c22] text-white border border-white/10 px-4 py-3 rounded-xl font-sans text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none"
-                      />
-                    </div>
-
-                    {submitError && (
-                      <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl text-center select-none font-sans">
-                        {submitError}
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-mono text-xs uppercase hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-bold rounded-xl cursor-pointer disabled:opacity-50 shadow-lg shadow-indigo-500/20"
-                    >
-                      {isSubmitting ? "Sending..." : "Send Message"}
-                      {!isSubmitting && <ArrowRight size={14} />}
-                    </button>
-                  </motion.form>
-                ) : (
-                  <motion.div 
-                    key="success-screen"
-                    className="text-center py-8 space-y-4"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500 rounded-full flex items-center justify-center mx-auto text-emerald-500 mb-2">
-                      ✓
-                    </div>
-                    <h4 className="text-xl font-bold text-white">
-                      {sentViaMailto ? "Email Client Opened" : "Transmission Succeeded"}
-                    </h4>
-                    <p className="text-sm text-gray-400 font-sans max-w-sm mx-auto">
-                      {sentViaMailto 
-                        ? "Your email application has been launched with a pre-filled message. Please hit 'Send' in your mail app to deliver your inquiry directly to Aryan!"
-                        : "Your operational inquiry has been successfully dispatched. Aryan will review your request and get back to you within 24 operational hours."
-                      }
-                    </p>
-                    <button
-                      onClick={() => {
-                        setIsSubmitted(false);
-                        setIsFormOpen(false);
-                        setSubmitError(null);
-                      }}
-                      className="px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-mono text-xs uppercase hover:opacity-90 transition-opacity mt-4 rounded-xl"
-                    >
-                      Return to Page
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
   );
 }
